@@ -1,112 +1,21 @@
 
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, RotateCcw, Clock, CheckCircle, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
-import { usePapers } from "@/hooks/usePapers";
+import { useCrawler } from "@/hooks/useCrawler";
 
 const CrawlerStatus = () => {
-  const [isRunning, setIsRunning] = useState(false);
-  const [lastCheck, setLastCheck] = useState<Date | null>(null);
-  const [crawlerStatus, setCrawlerStatus] = useState<'idle' | 'crawling' | 'monitoring' | 'error'>('idle');
-  const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
-  
-  const { addPaper } = usePapers();
-
-  // Mock data for simulation
-  const mockPapers = [
-    {
-      title: "数字化转型背景下的高等教育治理现代化研究",
-      authors: ["张三", "李四"],
-      issue: "2024年第1期",
-      pages: "1-8",
-      publication_date: "2024-01-15",
-      keywords: ["数字化转型", "高等教育", "治理现代化"]
-    },
-    {
-      title: "新时代大学生思想政治教育创新路径探析",
-      authors: ["王五", "赵六"],
-      issue: "2024年第1期", 
-      pages: "9-16",
-      publication_date: "2024-01-15",
-      keywords: ["思想政治教育", "创新路径", "大学生"]
-    }
-  ];
-
-  const startCrawler = () => {
-    setIsRunning(true);
-    setCrawlerStatus('crawling');
-    setLastCheck(new Date());
-    
-    toast.success("爬虫已启动", {
-      description: "开始爬取期刊目录数据"
-    });
-
-    // 模拟爬取过程
-    setTimeout(() => {
-      setCrawlerStatus('monitoring');
-      toast.success("初始爬取完成", {
-        description: "开始定时监控新论文"
-      });
-      
-      // 模拟添加一篇论文
-      const randomPaper = mockPapers[Math.floor(Math.random() * mockPapers.length)];
-      addPaper.mutate(randomPaper);
-      
-      // 设置定时检查
-      const interval = setInterval(() => {
-        setLastCheck(new Date());
-        console.log("执行定时检查...");
-        
-        // 模拟检查结果 - 偶尔发现新论文
-        if (Math.random() > 0.8) {
-          const randomPaper = mockPapers[Math.floor(Math.random() * mockPapers.length)];
-          addPaper.mutate({
-            ...randomPaper,
-            title: `${randomPaper.title} (${new Date().getTime()})`, // 添加时间戳避免重复
-          });
-          
-          toast.info("发现新论文", {
-            description: "检测到期刊有新的论文收录"
-          });
-        }
-      }, 30000); // 30秒检查一次
-      
-      setCheckInterval(interval);
-    }, 3000);
-  };
-
-  const stopCrawler = () => {
-    setIsRunning(false);
-    setCrawlerStatus('idle');
-    
-    if (checkInterval) {
-      clearInterval(checkInterval);
-      setCheckInterval(null);
-    }
-    
-    toast.info("爬虫已停止", {
-      description: "监控服务已暂停"
-    });
-  };
-
-  const resetCrawler = () => {
-    stopCrawler();
-    setLastCheck(null);
-    toast.info("爬虫已重置", {
-      description: "所有状态已清空"
-    });
-  };
-
-  useEffect(() => {
-    return () => {
-      if (checkInterval) {
-        clearInterval(checkInterval);
-      }
-    };
-  }, [checkInterval]);
+  const {
+    isRunning,
+    lastCheck,
+    crawlerStatus,
+    settings,
+    startCrawler,
+    stopCrawler,
+    resetCrawler,
+    isLoading
+  } = useCrawler();
 
   const getStatusColor = () => {
     switch (crawlerStatus) {
@@ -154,7 +63,7 @@ const CrawlerStatus = () => {
             onClick={isRunning ? stopCrawler : startCrawler}
             variant={isRunning ? "destructive" : "default"}
             className="flex-1"
-            disabled={addPaper.isPending}
+            disabled={isLoading}
           >
             {isRunning ? (
               <>
@@ -168,7 +77,7 @@ const CrawlerStatus = () => {
               </>
             )}
           </Button>
-          <Button onClick={resetCrawler} variant="outline">
+          <Button onClick={resetCrawler} variant="outline" disabled={isLoading}>
             <RotateCcw className="h-4 w-4 mr-2" />
             重置
           </Button>
@@ -184,9 +93,10 @@ const CrawlerStatus = () => {
         )}
         
         <div className="text-xs text-slate-500 space-y-1">
-          <p>• 目标网站: https://ahdxzsb.ahu.edu.cn/oa/Dlistnum.aspx</p>
-          <p>• 检查频率: 每30秒一次</p>
+          <p>• 目标网站: {settings.targetUrl}</p>
+          <p>• 检查频率: 每{settings.checkInterval}秒一次</p>
           <p>• 监控内容: 《安徽大学学报(哲学社会科学版)》新论文</p>
+          <p>• 状态: {isRunning ? '运行中' : '已停止'}</p>
         </div>
       </CardContent>
     </Card>

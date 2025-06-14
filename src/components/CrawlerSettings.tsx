@@ -1,5 +1,4 @@
 
-import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,53 +7,28 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Settings, Save, Bell, Clock, Globe, Link2, Brain } from "lucide-react";
-import { toast } from "sonner";
+import { useCrawler } from "@/hooks/useCrawler";
+import { useState } from "react";
 
 const CrawlerSettings = () => {
-  const [settings, setSettings] = useState({
-    // 网址配置
-    targetUrl: "https://ahdxzsb.ahu.edu.cn/oa/Dlistnum.aspx",
-    backupUrls: [],
-    
-    // 自然语言配置
-    crawlDescription: "爬取《安徽大学学报(哲学社会科学版)》的所有论文标题、作者、摘要和发布日期",
-    targetElements: "论文列表中的标题链接、作者信息、发布时间",
-    excludePatterns: "广告、导航菜单、页脚信息",
-    
-    // 原有配置
-    checkInterval: "30",
-    enableNotifications: true,
-    enableEmailAlerts: false,
-    maxRetries: "3",
-    timeout: "10",
-    userAgent: "AcademicCrawler/1.0"
-  });
-
+  const { settings, updateSettings } = useCrawler();
+  const [localSettings, setLocalSettings] = useState(settings);
   const [newBackupUrl, setNewBackupUrl] = useState("");
+  const [backupUrls, setBackupUrls] = useState<string[]>([]);
 
   const handleSave = () => {
-    toast.success("设置已保存", {
-      description: "爬虫配置已更新，将根据新设置执行爬取任务"
-    });
+    updateSettings(localSettings);
   };
 
   const addBackupUrl = () => {
-    if (newBackupUrl.trim() && !settings.backupUrls.includes(newBackupUrl)) {
-      setSettings({
-        ...settings,
-        backupUrls: [...settings.backupUrls, newBackupUrl.trim()]
-      });
+    if (newBackupUrl.trim() && !backupUrls.includes(newBackupUrl)) {
+      setBackupUrls([...backupUrls, newBackupUrl.trim()]);
       setNewBackupUrl("");
-      toast.success("备用网址已添加");
     }
   };
 
   const removeBackupUrl = (url: string) => {
-    setSettings({
-      ...settings,
-      backupUrls: settings.backupUrls.filter(u => u !== url)
-    });
-    toast.info("备用网址已移除");
+    setBackupUrls(backupUrls.filter(u => u !== url));
   };
 
   return (
@@ -79,8 +53,8 @@ const CrawlerSettings = () => {
               <Label htmlFor="targetUrl">主要目标网址</Label>
               <Input
                 id="targetUrl"
-                value={settings.targetUrl}
-                onChange={(e) => setSettings({...settings, targetUrl: e.target.value})}
+                value={localSettings.targetUrl}
+                onChange={(e) => setLocalSettings({...localSettings, targetUrl: e.target.value})}
                 placeholder="https://example.com"
               />
             </div>
@@ -97,9 +71,9 @@ const CrawlerSettings = () => {
                   添加
                 </Button>
               </div>
-              {settings.backupUrls.length > 0 && (
+              {backupUrls.length > 0 && (
                 <div className="space-y-1">
-                  {settings.backupUrls.map((url, index) => (
+                  {backupUrls.map((url, index) => (
                     <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
                       <span className="text-sm text-slate-600 truncate">{url}</span>
                       <Button 
@@ -118,53 +92,7 @@ const CrawlerSettings = () => {
           </div>
         </div>
 
-        {/* 自然语言配置 */}
-        <div className="space-y-4 p-4 bg-green-50 rounded-lg border border-green-200">
-          <h4 className="font-medium flex items-center space-x-2 text-green-800">
-            <Brain className="h-4 w-4" />
-            <span>智能爬取配置</span>
-          </h4>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="crawlDescription">爬取任务描述</Label>
-              <Textarea
-                id="crawlDescription"
-                value={settings.crawlDescription}
-                onChange={(e) => setSettings({...settings, crawlDescription: e.target.value})}
-                placeholder="用自然语言描述你想要爬取的内容..."
-                rows={3}
-              />
-              <p className="text-xs text-green-600">
-                详细描述爬取目标，AI将根据描述智能识别页面元素
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="targetElements">目标元素描述</Label>
-              <Textarea
-                id="targetElements"
-                value={settings.targetElements}
-                onChange={(e) => setSettings({...settings, targetElements: e.target.value})}
-                placeholder="描述需要提取的具体页面元素..."
-                rows={2}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="excludePatterns">排除内容描述</Label>
-              <Textarea
-                id="excludePatterns"
-                value={settings.excludePatterns}
-                onChange={(e) => setSettings({...settings, excludePatterns: e.target.value})}
-                placeholder="描述需要忽略的内容..."
-                rows={2}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* 原有配置保留 */}
+        {/* 基本配置 */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="interval" className="flex items-center space-x-2">
@@ -172,8 +100,8 @@ const CrawlerSettings = () => {
               <span>检查间隔 (秒)</span>
             </Label>
             <Select
-              value={settings.checkInterval}
-              onValueChange={(value) => setSettings({...settings, checkInterval: value})}
+              value={localSettings.checkInterval.toString()}
+              onValueChange={(value) => setLocalSettings({...localSettings, checkInterval: parseInt(value)})}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -193,8 +121,8 @@ const CrawlerSettings = () => {
             <Input
               id="timeout"
               type="number"
-              value={settings.timeout}
-              onChange={(e) => setSettings({...settings, timeout: e.target.value})}
+              value={localSettings.timeout}
+              onChange={(e) => setLocalSettings({...localSettings, timeout: parseInt(e.target.value)})}
               min="5"
               max="60"
             />
@@ -203,8 +131,8 @@ const CrawlerSettings = () => {
           <div className="space-y-2">
             <Label htmlFor="retries">最大重试次数</Label>
             <Select
-              value={settings.maxRetries}
-              onValueChange={(value) => setSettings({...settings, maxRetries: value})}
+              value={localSettings.maxRetries.toString()}
+              onValueChange={(value) => setLocalSettings({...localSettings, maxRetries: parseInt(value)})}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -225,8 +153,8 @@ const CrawlerSettings = () => {
             </Label>
             <Input
               id="userAgent"
-              value={settings.userAgent}
-              onChange={(e) => setSettings({...settings, userAgent: e.target.value})}
+              value={localSettings.userAgent}
+              onChange={(e) => setLocalSettings({...localSettings, userAgent: e.target.value})}
             />
           </div>
         </div>
@@ -244,19 +172,8 @@ const CrawlerSettings = () => {
               </Label>
               <Switch
                 id="notifications"
-                checked={settings.enableNotifications}
-                onCheckedChange={(checked) => setSettings({...settings, enableNotifications: checked})}
-              />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <Label htmlFor="email" className="cursor-pointer">
-                启用邮件提醒
-              </Label>
-              <Switch
-                id="email"
-                checked={settings.enableEmailAlerts}
-                onCheckedChange={(checked) => setSettings({...settings, enableEmailAlerts: checked})}
+                checked={localSettings.enableNotifications}
+                onCheckedChange={(checked) => setLocalSettings({...localSettings, enableNotifications: checked})}
               />
             </div>
           </div>
