@@ -54,13 +54,15 @@ const Index = () => {
         {/* 主要内容区域 */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* 左侧：控制面板和设置 */}
-          <div className="space-y-6">
+          <div className="flex flex-col h-fit">
             <CrawlerStatus />
-            <CrawlerSettings />
+            <div className="mt-6">
+              <CrawlerSettings />
+            </div>
           </div>
 
           {/* 右侧：论文列表 */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 h-fit">
             <PaperList />
           </div>
         </div>
