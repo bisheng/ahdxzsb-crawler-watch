@@ -5,12 +5,35 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Pause, RotateCcw, Clock, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { usePapers } from "@/hooks/usePapers";
 
 const CrawlerStatus = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
   const [crawlerStatus, setCrawlerStatus] = useState<'idle' | 'crawling' | 'monitoring' | 'error'>('idle');
   const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
+  
+  const { addPaper } = usePapers();
+
+  // Mock data for simulation
+  const mockPapers = [
+    {
+      title: "数字化转型背景下的高等教育治理现代化研究",
+      authors: ["张三", "李四"],
+      issue: "2024年第1期",
+      pages: "1-8",
+      publication_date: "2024-01-15",
+      keywords: ["数字化转型", "高等教育", "治理现代化"]
+    },
+    {
+      title: "新时代大学生思想政治教育创新路径探析",
+      authors: ["王五", "赵六"],
+      issue: "2024年第1期", 
+      pages: "9-16",
+      publication_date: "2024-01-15",
+      keywords: ["思想政治教育", "创新路径", "大学生"]
+    }
+  ];
 
   const startCrawler = () => {
     setIsRunning(true);
@@ -28,13 +51,23 @@ const CrawlerStatus = () => {
         description: "开始定时监控新论文"
       });
       
+      // 模拟添加一篇论文
+      const randomPaper = mockPapers[Math.floor(Math.random() * mockPapers.length)];
+      addPaper.mutate(randomPaper);
+      
       // 设置定时检查
       const interval = setInterval(() => {
         setLastCheck(new Date());
         console.log("执行定时检查...");
         
-        // 模拟检查结果
+        // 模拟检查结果 - 偶尔发现新论文
         if (Math.random() > 0.8) {
+          const randomPaper = mockPapers[Math.floor(Math.random() * mockPapers.length)];
+          addPaper.mutate({
+            ...randomPaper,
+            title: `${randomPaper.title} (${new Date().getTime()})`, // 添加时间戳避免重复
+          });
+          
           toast.info("发现新论文", {
             description: "检测到期刊有新的论文收录"
           });
@@ -121,6 +154,7 @@ const CrawlerStatus = () => {
             onClick={isRunning ? stopCrawler : startCrawler}
             variant={isRunning ? "destructive" : "default"}
             className="flex-1"
+            disabled={addPaper.isPending}
           >
             {isRunning ? (
               <>
