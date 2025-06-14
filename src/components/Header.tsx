@@ -1,5 +1,6 @@
 
 import { BookOpen, Search } from "lucide-react";
+import UserMenu from "./UserMenu";
 
 const Header = () => {
   return (
@@ -15,9 +16,12 @@ const Header = () => {
               <p className="text-blue-200 text-sm">安徽大学学报(哲学社会科学版) 自动监控系统</p>
             </div>
           </div>
-          <div className="flex items-center space-x-2 bg-slate-800 px-4 py-2 rounded-lg">
-            <Search className="h-4 w-4 text-blue-300" />
-            <span className="text-sm text-blue-200">智能监控中</span>
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 bg-slate-800 px-4 py-2 rounded-lg">
+              <Search className="h-4 w-4 text-blue-300" />
+              <span className="text-sm text-blue-200">智能监控中</span>
+            </div>
+            <UserMenu />
           </div>
         </div>
       </div>
